@@ -13,7 +13,17 @@ import time
 from pathlib import Path
 
 from .config import RunConfig, load_config, save_config
-from .utils import count_parameters, detect_precision, human, load_tokenizer, logger, model_init_kwargs, quantization_config, setup_logging
+from .utils import (
+    count_parameters,
+    detect_precision,
+    human,
+    load_tokenizer,
+    logger,
+    model_init_kwargs,
+    quantization_config,
+    setup_logging,
+    upcast_trainable_params,
+)
 
 
 def build_peft_config(cfg: RunConfig):
@@ -95,6 +105,11 @@ def train(cfg: RunConfig) -> dict:
         peft_config=build_peft_config(cfg),
         quantization_config=quantization_config(cfg.model.quantization, prec),
     )
+
+    if prec.fp16:
+        n = upcast_trainable_params(trainer.model)
+        if n:
+            logger.info("Cast %d adapter tensors to float32 for fp16 mixed-precision training", n)
 
     trainable, total = count_parameters(trainer.model)
     logger.info("Trainable params: %s / %s (%.3f%%) — that's the LoRA adapter", human(trainable), human(total), 100 * trainable / total)

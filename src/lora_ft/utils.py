@@ -39,7 +39,9 @@ def detect_precision(requested: str = "auto") -> Precision:
 
     if torch.cuda.is_available():
         device = "cuda"
-        bf16_ok = torch.cuda.is_bf16_supported()
+        # Native bf16 needs compute capability 8.0+ (Ampere). Don't use torch.cuda.is_bf16_supported():
+        # recent PyTorch returns True on a T4 (7.5) because bf16 can be *emulated*, which is slow and fragile.
+        bf16_ok = torch.cuda.get_device_capability()[0] >= 8
         name = {"auto": "bfloat16" if bf16_ok else "float16"}.get(requested, requested)
         if name == "bfloat16" and not bf16_ok:
             logger.warning("bfloat16 isn't supported on this GPU, falling back to float16")

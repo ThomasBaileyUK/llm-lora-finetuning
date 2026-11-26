@@ -1,0 +1,31 @@
+# QLoRA: base model loaded in 4-bit NF4, LoRA adapter trained in 16-bit.
+# A 4B model in ~6–8 GB of VRAM — fits a free Colab T4.
+model:
+  name: Qwen/Qwen3-4B
+  dtype: auto
+  quantization: 4bit
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: all-linear
+
+data:
+  train: data/recruiter_assistant/train.jsonl
+  eval: data/recruiter_assistant/eval.jsonl
+  system_prompt: >-
+    You are a sharp, candid assistant for a technical recruiter who specialises in applied-AI engineering roles (forward deployed engineers, product engineers, AI engineers). Be concise, practical and accurate. Use plain British English.
+
+train:
+  output_dir: outputs/qwen3-4b-qlora
+  num_train_epochs: 3
+  learning_rate: 2.0e-4
+  warmup_steps: 0.05
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 4
+  max_length: 1024
+  assistant_only_loss: true
+  logging_steps: 2
+  eval_steps: 10
+  save_steps: 100

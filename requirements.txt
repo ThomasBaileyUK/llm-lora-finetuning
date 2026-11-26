@@ -1,0 +1,9 @@
+# Core (GPU or CPU). For QLoRA on Linux + NVIDIA also: pip install bitsandbytes
+torch>=2.4
+transformers>=5.0
+trl>=1.0
+peft>=0.17
+datasets>=3.0
+accelerate>=1.0
+pyyaml>=6.0
+matplotlib>=3.7

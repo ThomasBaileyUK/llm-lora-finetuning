@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lora-ft"
+version = "0.1.0"
+description = "A small, readable toolkit for LoRA / QLoRA fine-tuning of open LLMs with Hugging Face TRL + PEFT."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Tom Bailey" }]
+requires-python = ">=3.10"
+dependencies = [
+  "torch>=2.4",
+  "transformers>=5.0",
+  "trl>=1.0",
+  "peft>=0.17",
+  "datasets>=3.0",
+  "accelerate>=1.0",
+  "pyyaml>=6.0",
+  "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+qlora = ["bitsandbytes>=0.45; platform_system == 'Linux'"]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+lora-train = "lora_ft.train:main"
+lora-chat = "lora_ft.chat:main"
+lora-merge = "lora_ft.merge:main"
+lora-eval = "lora_ft.evaluate:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]

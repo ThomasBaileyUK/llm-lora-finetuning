@@ -80,6 +80,22 @@ def model_init_kwargs(cfg, prec: Precision) -> dict:
     return kw
 
 
+def upcast_trainable_params(model) -> int:
+    """Cast trainable (LoRA) weights to float32. Returns how many tensors were changed.
+
+    fp16 mixed precision uses a gradient scaler that only accepts fp32/fp16 gradients, but QLoRA
+    can create the adapter weights in bf16. Keeping the small adapter in fp32 is also more stable.
+    """
+    import torch
+
+    changed = 0
+    for p in model.parameters():
+        if p.requires_grad and p.dtype != torch.float32:
+            p.data = p.data.float()
+            changed += 1
+    return changed
+
+
 def count_parameters(model) -> tuple[int, int]:
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
     total = sum(p.numel() for p in model.parameters())

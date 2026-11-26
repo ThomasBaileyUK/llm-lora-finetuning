@@ -73,3 +73,18 @@ def test_lora_config_kwargs(fakes):
     kw = build_peft_config(cfg).kw
     assert set(kw) <= LORA_PARAMS
     assert kw["r"] == 8 and kw["task_type"] == "CAUSAL_LM" and kw["target_modules"] == "all-linear"
+
+
+@pytest.mark.parametrize("capability, expected", [((7, 5), "float16"), ((7, 0), "float16"), ((8, 0), "bfloat16"), ((8, 9), "bfloat16"), ((9, 0), "bfloat16")])
+def test_precision_detection_uses_compute_capability(monkeypatch, capability, expected):
+    """T4 (7.5) must get fp16 even though PyTorch reports bf16 as 'supported' via emulation."""
+    torch = types.ModuleType("torch")
+    torch.bfloat16, torch.float16, torch.float32 = "bf16", "fp16", "fp32"
+    torch.cuda = types.SimpleNamespace(is_available=lambda: True, get_device_capability=lambda: capability, is_bf16_supported=lambda: True)
+    monkeypatch.setitem(sys.modules, "torch", torch)
+    from lora_ft.utils import detect_precision
+
+    prec = detect_precision("auto")
+    assert prec.dtype_name == expected
+    assert (prec.bf16, prec.fp16) == (expected == "bfloat16", expected == "float16")
+    assert detect_precision("bfloat16").dtype_name == expected  # an explicit bf16 request also falls back on a T4

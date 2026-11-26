@@ -88,3 +88,40 @@ def test_precision_detection_uses_compute_capability(monkeypatch, capability, ex
     assert prec.dtype_name == expected
     assert (prec.bf16, prec.fp16) == (expected == "bfloat16", expected == "float16")
     assert detect_precision("bfloat16").dtype_name == expected  # an explicit bf16 request also falls back on a T4
+
+
+def test_upcast_trainable_params(monkeypatch):
+    """Only trainable non-fp32 tensors are converted (the frozen 4-bit base must be left alone)."""
+    torch = types.ModuleType("torch")
+    torch.float32, torch.bfloat16 = "fp32", "bf16"
+    monkeypatch.setitem(sys.modules, "torch", torch)
+
+    class Data:
+        def __init__(self, dtype):
+            self.dtype = dtype
+
+        def float(self):
+            return Data("fp32")
+
+    class Param:
+        def __init__(self, dtype, requires_grad):
+            self._data, self.requires_grad = Data(dtype), requires_grad
+
+        @property
+        def dtype(self):
+            return self._data.dtype
+
+        @property
+        def data(self):
+            return self._data
+
+        @data.setter
+        def data(self, v):
+            self._data = v
+
+    params = [Param("bf16", True), Param("fp32", True), Param("bf16", False), Param("uint8", False)]
+    model = types.SimpleNamespace(parameters=lambda: iter(params))
+    from lora_ft.utils import upcast_trainable_params
+
+    assert upcast_trainable_params(model) == 1
+    assert [p.dtype for p in params] == ["fp32", "fp32", "bf16", "uint8"]

@@ -170,6 +170,7 @@ tests/                    unit tests (run on CI without a GPU)
 - **`CUDA out of memory`:** lower `train.per_device_train_batch_size` or `train.max_length`, switch to a `qlora` config, or keep `gradient_checkpointing: true`.
 - **`bf16` errors on Colab:** shouldn't happen, because T4s are detected and use fp16. If you set `model.dtype: bfloat16` by hand, set it back to `auto`.
 - **Assistant-only loss error:** the model's chat template needs `{% generation %}` markers. TRL patches common families like Qwen3 automatically. For other models, set `train.assistant_only_loss: false`.
+- **`ImportError: Found an incompatible version of torchao`:** Colab ships an old `torchao` that recent PEFT rejects. This project doesn't use it, so run `pip uninstall -y torchao` (the notebook does this for you).
 - **`bitsandbytes` won't install:** QLoRA needs Linux and an NVIDIA GPU. Use a `quantization: none` config on Mac or Windows.
 - **Model barely changed:** train for more epochs, raise `lora.r`, check the learning rate (~1e-4 to 2e-4), and make sure your examples are consistent.
 
